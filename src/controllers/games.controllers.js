@@ -7,12 +7,10 @@ export async function create(req, res){
         if(existingCategory.rowCount === 0){
             return res.sendStatus(400)
         }
-        console.log(existingCategory)
         const existingGame = await connection.query('SELECT * FROM games WHERE games.name=$1', [name])
         if(existingGame.rowCount > 0){
             return res.sendStatus(409)
         }
-        console.log(existingGame)
         await connection.query('INSERT INTO games (name, image, "stockTotal", "categoryId", "pricePerDay") VALUES ($1, $2, $3, $4, $5);', 
         [name, image, stockTotal, categoryId, pricePerDay])
         res.sendStatus(201)
@@ -36,7 +34,7 @@ export async function findAll(req, res){
                 res.send(rows)
         }
         }
-        const {rows} = await connection.query('SELECT games.*, categories.name as "categoryName" FROM games JOIN categories ON games."categoryId"=categories.id;')
+        const {rows}= await connection.query('SELECT games.*, categories.name as "categoryName" FROM games JOIN categories ON games."categoryId"=categories.id;')
         res.send(rows)
 
     }catch(err){

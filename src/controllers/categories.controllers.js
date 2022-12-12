@@ -2,7 +2,6 @@ import { connection } from "../database/server.js"
 
 export async function create (req, res){
     const {name} = req.body
-    console.log(name)
     try{
         const existingCategory = await connection.query('SELECT * FROM categories WHERE categories.name=$1', [name])
         if(existingCategory.rowCount > 0){
@@ -22,7 +21,7 @@ export async function findAll (req, res){
         res.send(categories.rows)
 
     }catch(err){
-        res.sendStatus(500).send(err.message)
+        res.status(500).send(err.message)
     }
     
 }
