@@ -8,7 +8,7 @@ export async function create (req, res){
             return res.sendStatus(409)
         }
         await connection.query('INSERT INTO categories (name) VALUES ($1);', [name])
-        res.status(201)
+        res.status(201).send("Categoria criada com sucesso!")
 
     }catch(err){
         res.status(500).send(err.message)
