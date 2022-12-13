@@ -4,20 +4,23 @@ import dayjs from "dayjs"
 export async function create(req, res) {
     const { customerId, gameId, daysRented } = req.body
     try {
-        const existingCustomer = await connection.query('SELECT * FROM customers WHERE customers.id=$1;', [customerId])
-        if (existingCustomer.rowCount = 0) {
-            res.sendStatus(400)
+        const existingCustomer = await connection.query('SELECT * FROM customers WHERE id=$1;', [customerId])
+        if (existingCustomer.rowCount === 0) {
+            return res.sendStatus(400)
         }
-        const existingGame = await connection.query('SELECT * FROM games WHERE games.id=$1;', [gameId])
-        if (existingGame.rowCount = 0) {
-            res.sendStatus(400)
+        const existingGame = await connection.query('SELECT * FROM games WHERE id=$1;', [gameId])
+        if (existingGame.rowCount === 0) {
+            return res.sendStatus(400)
         }
         const openTab = await connection.query('SELECT * FROM rentals WHERE "gameId"=$1 AND "returnDate" IS null;', [gameId])
         const availableGames = await connection.query('SELECT "stockTotal" FROM games WHERE id=$1;', [gameId])
+        if(openTab.rowCount >0){
         if (openTab.rowCount === availableGames.rows[0].stockTotal) {
-            res.sendStatus(400)
+            return res.sendStatus(400)
         }
+    }
         const rented = await connection.query('SELECT "pricePerDay" FROM games WHERE id=$1;', [gameId])
+        console.log(rented)
         await connection.query('INSERT INTO rentals ("customerId", "gameId", "daysRented", "rentDate", "originalPrice", "returnDate", "delayFee") VALUES ($1, $2, $3, $4, $5, $6, $7);',
             [customerId, gameId, daysRented, dayjs(Date.now()).format('YYYY-MM-DD'), daysRented * rented.rows[0].pricePerDay, null, null])
         res.sendStatus(201)
@@ -35,32 +38,33 @@ export async function findAll(req, res) {
         if (idCustomer) {
             const { rows } = await connection.query('SELECT * FROM customers WHERE id=$1;', [idCustomer])
             if (rows.length === 0) {
-                res.sendStatus(404)
+                return res.sendStatus(404)
             } else {
-                res.send(rows)
+                return res.send(rows)
             }
         }
         if (idGame) {
             const { rows } = await connection.query('SELECT * FROM games WHERE id=$1;', [idGame])
             if (rows.length === 0) {
-                res.sendStatus(404)
+                return res.sendStatus(404)
             } else {
-                res.send(rows)
+                return res.send(rows)
             }
         } else {
             const rentals = await connection.query(`
-            SELECT *, customers.name as customers_name, games.name as games_name, categories.name as categories_name 
+            SELECT *, customers.name as customers_name, games.name as games_name, categories.name as categories_name, rentals.id as rentals_id 
             FROM rentals 
             LEFT JOIN customers ON 
             rentals."customerId"=customers.id 
             LEFT JOIN games 
             ON rentals."gameId"=games.id 
             LEFT JOIN categories 
-            ON games."categoryId"=categories.id;`)
+            ON games."categoryId"=categories.id
+           ;`)
             console.log(rentals)
             const obj = rentals.rows.map((i) => {
                 return {
-                    id: i.id,
+                    id: i.rentals_id,
                 customerId: i.customerId,
                 gameId: i.gameId,
                 rentDate: i.rentDate,
